@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interactive Quiz - Protocols & OSI/TCP-IP Models</title>
+<h1 style="position: absolute; top: 0; left: 50%; transform: translateX(-50%); margin-top: 10px; white-space: nowrap; color: white;">
+  Computer Networks Module 2
+</h1>
+<style>
+    
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, 'Segoe UI', Tahoma, sans-serif; }
+  body {
+    background: #3b3f44;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 16px;
+  }
+  .card {
+    background: #fff;
+    width: 100%;
+    max-width: 720px;
+    border-radius: 20px;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+    padding: 28px 26px;
+  }
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+    color: #64748b;
+    margin-bottom: 16px;
+  }
+  .progress {
+    background: #e2e8f0;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-weight: 600;
+    color: #1e293b;
+  }
+  .question {
+    font-size: 19px;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.6;
+    margin-bottom: 20px;
+  }
+  .options { display: flex; flex-direction: column; gap: 10px; }
+  .option {
+    background: #f8fafc;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-size: 15px;
+    color: #1e293b;
+    cursor: pointer;
+    transition: 0.15s;
+    text-align: left;
+    line-height: 1.5;
+  }
+  .option:hover:not(.locked) { background: #eff6ff; border-color: #93c5fd; }
+  .option.correct {
+    background: #dcfce7;
+    border-color: #22c55e;
+    color: #14532d;
+    font-weight: 600;
+  }
+  .option.wrong {
+    background: #fee2e2;
+    border-color: #ef4444;
+    color: #7f1d1d;
+  }
+  .option.locked { cursor: default; }
+  .explanation {
+    margin-top: 18px;
+    background: #eff6ff;
+    border-left: 5px solid #3b82f6;
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-size: 15px;
+    color: #1e3a8a;
+    line-height: 1.7;
+  }
+  .explanation strong { color: #1d4ed8; }
+  .nav-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+  }
+  .navbtn {
+    flex: 1;
+    padding: 14px;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.15s;
+  }
+  .prevbtn {
+    background: #e2e8f0;
+    color: #334155;
+  }
+  .prevbtn:hover:not(:disabled) { background: #cbd5e1; }
+  .nextbtn {
+    background: #2563eb;
+    color: #fff;
+  }
+  .nextbtn:hover:not(:disabled) { background: #1d4ed8; }
+  .navbtn:disabled { background: #f1f5f9; color: #94a3b8; cursor: not-allowed; }
+  .final {
+    text-align: center;
+    padding: 20px 0;
+  }
+  .final h2 { font-size: 26px; color: #0f172a; margin-bottom: 10px; }
+  .final p { font-size: 18px; color: #475569; margin-bottom: 20px; }
+  .restart {
+    padding: 12px 28px;
+    background: #16a34a;
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .restart:hover { background: #15803d; }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+
+<div class="card" id="app"></div>
+
+<script>
+/* ============ Questions Data ============ */
+const questions = [
+  { q: "1. What defines the rules that the sender, receiver, and all intermediate devices need to follow to be able to communicate effectively?",
+    options: ["A) An algorithm", "B) A protocol", "C) A logical connection", "D) A physical medium"],
+    correct: 1,
+    explanation: "A protocol defines the rules that both the sender and receiver and all intermediate devices need to follow to be able to communicate effectively." },
+  { q: "2. What is required when communication between devices is complex?",
+    options: ["A) A single complex protocol", "B) Only physical hardware connections", "C) A protocol at each layer, or protocol layering", "D) Elimination of intermediate devices"],
+    correct: 2,
+    explanation: "When the communication is complex, we need a protocol at each layer, or protocol layering." },
+  { q: "3. In the single-layer protocol scenario between Maria and Ann, what is the first rule they must follow?",
+    options: ["A) They should exchange nice words when they leave", "B) They should refrain from speaking when the other party is speaking", "C) They should restrict their vocabulary", "D) Maria and Ann should greet each other when they meet"],
+    correct: 3,
+    explanation: "The first rule is that Maria and Ann should greet each other when they meet." },
+  { q: "4. In the single-layer protocol scenario, what rule dictates how Maria and Ann manage speaking turns?",
+    options: ["A) The sender always has priority", "B) They should refrain from speaking when the other party is speaking", "C) The louder voice takes precedence", "D) They must use a token to speak"],
+    correct: 1,
+    explanation: "A rule they need to follow is that they should refrain from speaking when the other party is speaking." },
+  { q: "5. In the three-layer protocol scenario, what are the specific tasks of the third layer (Layer 3)?",
+    options: ["A) To encrypt and decrypt", "B) To listen and talk", "C) To send and receive mail", "D) To transport mail across a carrier facility"],
+    correct: 1,
+    explanation: "In the scenario, the third layer task is to listen (in one direction) and talk (in the other direction)." },
+  { q: "6. In the three-layer protocol scenario, what objects are exchanged at Layer 2 at both sites?",
+    options: ["A) Plaintext letters", "B) Ciphertext letters", "C) Pieces of mail", "D) Spoken words"],
+    correct: 1,
+    explanation: "The object under layer 2 at both sites should be a ciphertext letter." },
+  { q: "7. According to the first principle of protocol layering, what is required for bidirectional communication?",
+    options: ["A) Each layer must use a single protocol for both directions", "B) Only the top layer needs to handle bidirectional traffic", "C) Each layer must be able to perform two opposite tasks, one in each direction", "D) Devices must share the same physical address"],
+    correct: 2,
+    explanation: "The first principle dictates that if we want bidirectional communication, we need to make each layer so that it is able to perform two opposite tasks, one in each direction." },
+  { q: "8. According to the second principle of protocol layering, what must be true about the objects at both sites?",
+    options: ["A) They must be different to prevent interception", "B) They must be compressed before transmission", "C) The two objects under each layer at both sites should be identical", "D) They must be encapsulated with a unique signature"],
+    correct: 2,
+    explanation: "The second principle that we need to follow in protocol layering is that the two objects under each layer at both sites should be identical." },
+  { q: "9. What term is used to describe the layer-to-layer communication where parties can think they are sending objects directly through an imaginary connection at each layer?",
+    options: ["A) Physical connection", "B) Logical connection", "C) Subnet connection", "D) Multiplexed connection"],
+    correct: 1,
+    explanation: "Logical connection means that we have layer-to-layer communication, an imaginary connection at each layer through which they can send the object created from that layer." },
+  { q: "10. What does the acronym TCP/IP stand for?",
+    options: ["A) Transfer Control Protocol/Internet Platform", "B) Transmission Control Protocol/Internet Protocol", "C) Transport Communication Protocol/Internet Protocol", "D) Transmission Communication Protocol/Internal Protocol"],
+    correct: 1,
+    explanation: "TCP/IP stands for Transmission Control Protocol/Internet Protocol." },
+  { q: "11. How many layers are used in the TCP/IP protocol suite model as discussed in the material?",
+    options: ["A) 4", "B) 5", "C) 6", "D) 7"],
+    correct: 1,
+    explanation: "The layers used in this book for TCP/IP are five: Application, Transport, Network, Data link, and Physical." },
+  { q: "12. When a source host communicates with a destination host over the Internet, how many layers are the two hosts involved in?",
+    options: ["A) Two", "B) Three", "C) Four", "D) All five"],
+    correct: 3,
+    explanation: "The two hosts are involved in all five layers." },
+  { q: "13. How many layers is a router typically involved in, assuming it is used only for routing?",
+    options: ["A) One", "B) Two", "C) Three", "D) Five"],
+    correct: 2,
+    explanation: "The router is involved in only three layers; there is no transport or application layer in a router as long as the router is used only for routing." },
+  { q: "14. How many layers is a link-layer switch involved in?",
+    options: ["A) One", "B) Two", "C) Three", "D) Four"],
+    correct: 1,
+    explanation: "A link-layer switch in a link, however, is involved only in two layers, data-link and physical." },
+  { q: "15. In the TCP/IP protocol suite, which layers have end-to-end duties?",
+    options: ["A) Application, Transport, and Network layers", "B) Transport, Network, and Data-link layers", "C) Network, Data-link, and Physical layers", "D) Application and Physical layers"],
+    correct: 0,
+    explanation: "The duty of the application, transport, and network layers is end-to-end." },
+  { q: "16. In the TCP/IP protocol suite, which layers have hop-to-hop duties?",
+    options: ["A) Application and Transport layers", "B) Transport and Network layers", "C) Network and Data-link layers", "D) Data-link and Physical layers"],
+    correct: 3,
+    explanation: "The duty of the data-link and physical layers is hop-to-hop." },
+  { q: "17. What is the identical object (data unit) created and exchanged at the Application layer?",
+    options: ["A) Segment", "B) Datagram", "C) Message", "D) Frame"],
+    correct: 2,
+    explanation: "The identical objects at the Application layer are messages." },
+  { q: "18. What is the identical object (data unit) created and exchanged at the Transport layer?",
+    options: ["A) Message", "B) Segment or user datagram", "C) Datagram", "D) Frame"],
+    correct: 1,
+    explanation: "The identical objects at the Transport layer are segments or user datagrams." },
+  { q: "19. What is the identical object (data unit) created and exchanged at the Data link layer?",
+    options: ["A) Datagram", "B) Frame", "C) Bits", "D) Message"],
+    correct: 1,
+    explanation: "The identical objects at the Data link layer are frames." },
+  { q: "20. Which TCP/IP layer has the duty to allow access to network resources?",
+    options: ["A) Transport", "B) Network", "C) Application", "D) Physical"],
+    correct: 2,
+    explanation: "The Application layer's duty is to allow access to network resources." },
+  { q: "21. Which TCP/IP layer has the duty to provide reliable process-to-process message delivery and error recovery?",
+    options: ["A) Transport", "B) Data link", "C) Application", "D) Network"],
+    correct: 0,
+    explanation: "The Transport layer's duty is to provide reliable process-to-process message delivery and error recovery." },
+  { q: "22. Which TCP/IP layer has the duty to move packets from source to destination and provide internetworking?",
+    options: ["A) Transport", "B) Network", "C) Data link", "D) Application"],
+    correct: 1,
+    explanation: "The Network layer's duty is to move packets from source to destination; to provide internetworking." },
+  { q: "23. Which TCP/IP layer has the duty to organize bits into frames and provide hop-to-hop delivery?",
+    options: ["A) Transport", "B) Network", "C) Data link", "D) Physical"],
+    correct: 2,
+    explanation: "The Data link layer's duty is to organize bits into frames; to provide hop-to-hop delivery." },
+  { q: "24. Which TCP/IP layer is responsible for transmitting bits over a medium and providing mechanical and electrical specifications?",
+    options: ["A) Network", "B) Data link", "C) Physical", "D) Transport"],
+    correct: 2,
+    explanation: "The Physical layer's duty is to transmit bits over a medium; to provide mechanical and electrical specifications." },
+  { q: "25. What is the process called when data moves from an upper layer to a lower layer and each layer includes a bundle of information called a header along with the actual data?",
+    options: ["A) Demultiplexing", "B) Decapsulation", "C) Encapsulation", "D) Routing"],
+    correct: 2,
+    explanation: "When the data is moving from upper layer to the lower layer... each layer includes a bundle of information called a header along with the actual data. This packing of data in each layer is known as the encapsulation." },
+  { q: "26. What type of address is used at the Transport layer in the TCP/IP suite?",
+    options: ["A) Port numbers", "B) Logical addresses", "C) Link-layer addresses", "D) Names"],
+    correct: 0,
+    explanation: "The address used at the Transport layer (for segments/user datagrams) is Port numbers." },
+  { q: "27. What type of address is used at the Network layer in the TCP/IP suite?",
+    options: ["A) Names", "B) Port numbers", "C) Logical addresses", "D) Link-layer addresses"],
+    correct: 2,
+    explanation: "The address used at the Network layer (for datagrams) is Logical addresses." },
+  { q: "28. What type of address is used at the Data-link layer in the TCP/IP suite?",
+    options: ["A) Port numbers", "B) Logical addresses", "C) Link-layer addresses", "D) None"],
+    correct: 2,
+    explanation: "The address used at the Data-link layer (for frames) is Link-layer addresses." },
+  { q: "29. Why does the Physical layer not need addresses?",
+    options: ["A) Because all devices share a single physical line", "B) Because the unit of data exchange at the physical layer is a bit, which cannot have an address", "C) Because addresses are stripped by the router before transmission", "D) Because hardware devices ignore addresses"],
+    correct: 1,
+    explanation: "The physical layer does not need addresses; the unit of data exchange at the physical layer is a bit, which definitely cannot have an address." },
+  { q: "30. In the TCP/IP suite, what does multiplexing at the source mean?",
+    options: ["A) Sending the same packet multiple times to ensure delivery", "B) A protocol at a layer encapsulating a packet from several next-higher layer protocols", "C) Encrypting data to prevent interception", "D) Converting analog signals to digital signals"],
+    correct: 1,
+    explanation: "Multiplexing in this case means that a protocol at a layer can encapsulate a packet from several next-higher layer protocols (one at a time)." },
+  { q: "31. In the TCP/IP suite, what does demultiplexing at the destination mean?",
+    options: ["A) Splitting a large packet into smaller fragments", "B) Using multiple physical cables to receive data", "C) Decapsulating and delivering a packet to several next-higher layer protocols", "D) Removing headers from all layers simultaneously"],
+    correct: 2,
+    explanation: "Demultiplexing means that a protocol can decapsulate and deliver a packet to several next-higher layer protocols (one at a time)." },
+  { q: "32. What is the Open Systems Interconnection (OSI) model?",
+    options: ["A) A specific software application", "B) A physical hardware device for networking", "C) A layered framework for the design of network systems", "D) A single protocol used for the Internet"],
+    correct: 2,
+    explanation: "Open Systems Interconnection (OSI) model is not a protocol; it is a layered framework for the design of network systems that allows communication between all types of computer systems." },
+  { q: "33. How many layers does the OSI model consist of?",
+    options: ["A) 4", "B) 5", "C) 6", "D) 7"],
+    correct: 3,
+    explanation: "OSI model consists of seven layers." },
+  { q: "34. Which OSI layer is responsible for the physical cable or wireless connection between network nodes and taking care of bit rate control?",
+    options: ["A) Layer 1 - Physical Layer", "B) Layer 2 - Data link Layer", "C) Layer 3 - Network Layer", "D) Layer 4 - Transport Layer"],
+    correct: 0,
+    explanation: "The physical layer is responsible for the physical cable or wireless connection between network nodes... and is responsible for transmission of the raw data... while taking care of bit rate control." },
+  { q: "35. The OSI Data Link Layer is composed of which two parts?",
+    options: ["A) TCP and UDP", "B) Logical Link Control (LLC) and Media Access Control (MAC)", "C) Routing and Switching", "D) Encryption and Decryption"],
+    correct: 1,
+    explanation: "This layer is composed of two parts-Logical Link Control (LLC) ... and Media Access Control (MAC)." },
+  { q: "36. Within the OSI Data Link Layer, which sublayer identifies network protocols, performs error checking, and synchronizes frames?",
+    options: ["A) Logical Link Control (LLC)", "B) Media Access Control (MAC)", "C) Presentation Control (PC)", "D) Physical Control"],
+    correct: 0,
+    explanation: "Logical Link Control (LLC), which identifies network protocols, performs error checking and synchronizes frames." },
+  { q: "37. What is the main function of the OSI Network Layer?",
+    options: ["A) To create communication sessions between devices", "B) To encode, encrypt, and compress data", "C) To route packets by discovering the best path across a physical network", "D) To synchronize frames"],
+    correct: 2,
+    explanation: "The network layer has the main function to route packets by discovering the best path across a physical network." },
+  { q: "38. Which OSI layer carries out flow control, sending data at a rate that matches the connection speed of the receiving device?",
+    options: ["A) Session Layer", "B) Transport Layer", "C) Network Layer", "D) Data Link Layer"],
+    correct: 1,
+    explanation: "The transport layer carries out flow control, sending data at a rate that matches the connection speed of the receiving device." },
+  { q: "39. Which OSI layer is responsible for opening, ensuring they remain open, and closing communication channels called sessions?",
+    options: ["A) Transport Layer", "B) Session Layer", "C) Presentation Layer", "D) Application Layer"],
+    correct: 1,
+    explanation: "The session layer creates communication channels, called sessions, between devices. It is responsible for opening sessions, ensuring they remain open... and closing them." },
+  { q: "40. Which OSI layer defines how two devices should encode, encrypt, and compress data?",
+    options: ["A) Session Layer", "B) Presentation Layer", "C) Application Layer", "D) Transport Layer"],
+    correct: 1,
+    explanation: "The presentation layer prepares data for the application layer. It defines how two devices should encode, encrypt, and compress data." },
+  { q: "41. Which of the following is an example of an OSI Application Layer protocol?",
+    options: ["A) TCP", "B) UDP", "C) IP", "D) HTTP"],
+    correct: 3,
+    explanation: "A few examples of application layer protocols are the Hypertext Transfer Protocol (HTTP), File Transfer Protocol (FTP), Post Office Protocol (POP), Simple Mail Transfer Protocol (SMTP), and Domain Name System (DNS)." },
+  { q: "42. Which two OSI layers are missing from the TCP/IP protocol suite?",
+    options: ["A) Transport and Network", "B) Application and Presentation", "C) Session and Presentation", "D) Network and Data Link"],
+    correct: 2,
+    explanation: "When we compare the two models, we find that two layers, session and presentation, are missing from the TCP/IP protocol suite." },
+  { q: "43. In the TCP/IP protocol suite, the Application layer is usually considered to be the combination of which three OSI layers?",
+    options: ["A) Application, Presentation, and Session", "B) Transport, Session, and Presentation", "C) Network, Transport, and Session", "D) Data Link, Network, and Transport"],
+    correct: 0,
+    explanation: "The application layer in the suite is usually considered to be the combination of three layers in the OSI model (Application, Presentation, Session)." },
+  { q: "44. Which of the following is a primary reason the OSI model did not replace the TCP/IP protocol suite?",
+    options: ["A) The OSI model had fewer layers, making it less effective", "B) OSI was completed when TCP/IP was fully in place and a lot of time and money had been spent on the suite", "C) The OSI model lacked a Physical layer definition", "D) TCP/IP offered better encryption by default"],
+    correct: 1,
+    explanation: "OSI was completed when TCP/IP was fully in place and a lot of time and money had been spent on the suite; changing it would cost a lot." },
+  { q: "45. What issue regarding specific layers contributed to the OSI model's lack of success against TCP/IP?",
+    options: ["A) The Network layer used too many addresses", "B) The Application layer did not support web browsers", "C) Some layers in the OSI model were never fully defined, specifically the session and presentation layers", "D) The Data Link layer lacked MAC addressing"],
+    correct: 2,
+    explanation: "Some layers in the OSI model were never fully defined (session and presentation layers)." },
+  { q: "46. In the single-layer protocol scenario, what rule relates to the vocabulary used by Maria and Ann?",
+    options: ["A) They should use technical networking terms", "B) They should restrict their vocabulary to the level of their friendship", "C) They should speak in completely different languages", "D) They should use encrypted words"],
+    correct: 1,
+    explanation: "A set of rules needs to be followed, including that they should restrict their vocabulary to the level of their friendship." },
+  { q: "47. In the single-layer protocol scenario, what is the final rule Maria and Ann should follow when their conversation ends?",
+    options: ["A) They should sign a transmission log", "B) They should immediately stop talking without warning", "C) They should exchange some nice words when they leave", "D) They should schedule the next meeting"],
+    correct: 2,
+    explanation: "The fourth rule states they should exchange some nice words when they leave." },
+  { q: "48. In the three-layer protocol scenario, why do Maria and Ann need a layer that performs encryption and decryption?",
+    options: ["A) To translate between two different languages", "B) To compress the size of the letters", "C) Because they do not want their ideas to be revealed by other people if the letters are intercepted", "D) Because the postal carrier requires it"],
+    correct: 2,
+    explanation: "They do not want their ideas to be revealed by other people if the letters are intercepted, which introduces the need for the encryption/decryption layer." },
+  { q: "49. According to the material, what does protocol layering enable us to do with a complex task?",
+    options: ["A) Eliminate the need for physical hardware", "B) Divide a complex task into several smaller and simpler tasks", "C) Combine multiple small tasks into one large protocol", "D) Bypass intermediate routers and switches"],
+    correct: 1,
+    explanation: "Protocol layering enables us to divide a complex task into several smaller and simpler tasks." },
+  { q: "50. When communicating through an internet, how many communicating devices are involved in the example where computer A communicates with computer B across three links and one router?",
+    options: ["A) Three", "B) Four", "C) Five", "D) Six"],
+    correct: 2,
+    explanation: "We have five communicating devices in this communication: source host (computer A), the link-layer switch in link 1, the router, the link-layer switch in link 2, and the destination host (computer B)." },
+  { q: "51. Why is a router involved in multiple combinations of link and physical layers (n combinations)?",
+    options: ["A) Because routers only understand the application layer", "B) Because it must encrypt data multiple times", "C) Because each link the router is connected to may use its own data-link or physical protocol", "D) Because routers generate new messages for every host"],
+    correct: 2,
+    explanation: "The router is involved in n combinations of link and physical layers... The reason is that each link may use its own data-link or physical protocol." },
+  { q: "52. Unlike a router, why is a link-layer switch involved in only one data-link and one physical layer?",
+    options: ["A) Because it cannot process headers", "B) Because its connections are in the same link, which uses only one set of protocols", "C) Because it only operates at the application layer", "D) Because switches only drop packets"],
+    correct: 1,
+    explanation: "Although each switch has two different connections, the connections are in the same link, which uses only one set of protocols. This means a link-layer switch is involved only in one data-link and one physical layer." },
+  { q: "53. According to the notes in the material, why are link-layer switches NOT shown in the diagram depicting identical objects between devices?",
+    options: ["A) Because they do not change objects", "B) Because they do not have physical ports", "C) Because they operate at the transport layer", "D) Because they only process ciphertext"],
+    correct: 0,
+    explanation: "We have not shown switches because they don't change objects." },
+  { q: "54. Does encapsulation or decapsulation occur in a link-layer switch?",
+    options: ["A) Yes, both occur", "B) Only encapsulation occurs", "C) Only decapsulation occurs", "D) No encapsulation/decapsulation occurs in this device"],
+    correct: 3,
+    explanation: "We have not shown the layers for the link-layer switches because no encapsulation/ decapsulation occurs in this device." },
+  { q: "55. In the TCP/IP protocol suite, at which devices does both encapsulation and decapsulation occur during routing?",
+    options: ["A) The source host", "B) The destination host", "C) The router", "D) The link-layer switch"],
+    correct: 2,
+    explanation: "We show the encapsulation in the source host, decapsulation in the destination host, and encapsulation and decapsulation in the router." },
+  { q: "56. In the multiplexing and demultiplexing diagram, which upper-layer protocols are shown sending packets to be encapsulated by TCP and UDP?",
+    options: ["A) IP and MAC", "B) LLC and MAC", "C) FTP, HTTP, DNS, and SNMP", "D) IPv4 and IPv6"],
+    correct: 2,
+    explanation: "The diagram for multiplexing and demultiplexing shows FTP, HTTP, DNS, and SNMP connecting down into TCP and UDP." },
+  { q: "57. In the OSI model, what raw data format does the physical layer transmit?",
+    options: ["A) Hexadecimal strings", "B) A series of 0s and 1s", "C) Encrypted ciphertext", "D) User datagrams"],
+    correct: 1,
+    explanation: "The physical layer is responsible for transmission of the raw data, which is simply a series of 0s and 1s." },
+  { q: "58. In the OSI Data Link Layer, what does the Media Access Control (MAC) sublayer use to connect devices and define permissions to transmit and receive data?",
+    options: ["A) IP addresses", "B) Port numbers", "C) MAC addresses", "D) Logical addresses"],
+    correct: 2,
+    explanation: "Media Access Control (MAC) which uses MAC addresses to connect devices and define permissions to transmit and receive data." },
+  { q: "59. In the OSI Network Layer, what specific type of address is typically used to route packets to a destination node?",
+    options: ["A) MAC addresses", "B) Internet Protocol (IP) addresses", "C) Port addresses", "D) Physical hardware addresses"],
+    correct: 1,
+    explanation: "The network layer uses network addresses (typically Internet Protocol addresses) to route packets to a destination node." },
+  { q: "60. In the OSI Transport layer, what does flow control ensure?",
+    options: ["A) That data is routed through the shortest path", "B) That data is compressed properly", "C) Sending data at a rate that matches the connection speed of the receiving device", "D) That dropped packets are ignored"],
+    correct: 2,
+    explanation: "The transport layer carries out flow control, sending data at a rate that matches the connection speed of the receiving device." },
+  { q: "61. In the OSI model, what is the primary relationship of the presentation layer to the application layer?",
+    options: ["A) It bypasses the application layer entirely", "B) It routes packets for the application layer", "C) It prepares data for the application layer", "D) It physically transmits the application layer's signals"],
+    correct: 2,
+    explanation: "The presentation layer prepares data for the application layer." },
+  { q: "62. According to the OSI model, which layer is used directly by end-user software such as web browsers and email clients?",
+    options: ["A) Network Layer", "B) Session Layer", "C) Application Layer", "D) Transport Layer"],
+    correct: 2,
+    explanation: "The application layer is used by end-user software such as web browsers and email clients." },
+  { q: "63. Initially, what did most experts believe would happen when the OSI model appeared after the TCP/IP protocol suite?",
+    options: ["A) That OSI would fail immediately", "B) That OSI and TCP/IP would merge into a single model", "C) That the TCP/IP protocol would be fully replaced by the OSI model", "D) That the physical layer would be removed from both"],
+    correct: 2,
+    explanation: "Most experts were at first excited and thought that the TCP/IP protocol would be fully replaced by the OSI model." },
+  { q: "64. Which of the following is cited as the third reason for the lack of the OSI model's success compared to the TCP/IP protocol suite?",
+    options: ["A) The OSI model lacked an application layer", "B) TCP/IP was free while OSI was highly expensive", "C) OSI implementation did not show a high enough level of performance to attract the Internet authority to switch", "D) The OSI model was completely incompatible with wireless technologies"],
+    correct: 2,
+    explanation: "The third reason states: When OSI was implemented by an organization in a different application, it did not show a high enough level of performance to attract the Internet authority to switch from the TCP/IP protocol suite to the OSI model." }
+];
+
+/* ============ Quiz Logic ============ */
+const app = document.getElementById('app');
+let currentIndex = 0;
+let score = 0;
+// Store user's answers to persist when navigating back/forward.
+// Each entry: { selectedIndex: number | null, answered: boolean }
+let userAnswers = questions.map(() => ({ selectedIndex: null, answered: false }));
+
+function renderQuestion() {
+  const q = questions[currentIndex];
+  const total = questions.length;
+  const state = userAnswers[currentIndex];
+
+  app.innerHTML = `
+    <div class="topbar">
+      <span>Question ${currentIndex + 1} of ${total}</span>
+      <span class="progress">Score: ${score}</span>
+    </div>
+    <div class="question">${q.q}</div>
+    <div class="options" id="options"></div>
+    <div class="explanation ${state.answered ? '' : 'hidden'}" id="explanation">
+      <strong>✅ Correct Answer:</strong> ${q.options[q.correct]}<br><br>
+      <strong>💡 Explanation:</strong> ${q.explanation}
+    </div>
+    <div class="nav-buttons">
+      <button class="navbtn prevbtn" id="prevBtn" ${currentIndex === 0 ? 'disabled' : ''}>← Previous</button>
+      <button class="navbtn nextbtn" id="nextBtn" ${state.answered ? '' : 'disabled'}>
+        ${currentIndex === total - 1 ? 'Show Results 🎯' : 'Next →'}
+      </button>
+    </div>
+  `;
+
+  const optionsBox = document.getElementById('options');
+  q.options.forEach((opt, i) => {
+    const div = document.createElement('div');
+    div.className = 'option';
+    div.textContent = opt;
+
+    if (state.answered) {
+      div.classList.add('locked');
+      if (i === q.correct) {
+        div.classList.add('correct');
+      } else if (i === state.selectedIndex) {
+        div.classList.add('wrong');
+      }
+    } else {
+      div.onclick = () => selectOption(i, div);
+    }
+    optionsBox.appendChild(div);
+  });
+
+  document.getElementById('nextBtn').onclick = nextQuestion;
+  document.getElementById('prevBtn').onclick = prevQuestion;
+}
+
+function selectOption(index, el) {
+  const state = userAnswers[currentIndex];
+  if (state.answered) return;
+
+  state.answered = true;
+  state.selectedIndex = index;
+  const q = questions[currentIndex];
+  const allOptions = document.querySelectorAll('.option');
+  allOptions.forEach(o => o.classList.add('locked'));
+
+  if (index === q.correct) {
+    el.classList.add('correct');
+    score++;
+  } else {
+    el.classList.add('wrong');
+    allOptions[q.correct].classList.add('correct');
+  }
+
+  document.querySelector('.progress').textContent = `Score: ${score}`;
+  document.getElementById('explanation').classList.remove('hidden');
+  document.getElementById('nextBtn').disabled = false;
+}
+
+function nextQuestion() {
+  if (currentIndex < questions.length - 1) {
+    currentIndex++;
+    renderQuestion();
+  } else {
+    showResults();
+  }
+}
+
+function prevQuestion() {
+  if (currentIndex > 0) {
+    currentIndex--;
+    renderQuestion();
+  }
+}
+
+function showResults() {
+  const total = questions.length;
+  app.innerHTML = `
+    <div class="final">
+      <h2>🎉 Quiz Complete!</h2>
+      <p>Your Score: <strong>${score}</strong> out of <strong>${total}</strong></p>
+      <p>Percentage: ${Math.round((score / total) * 100)}%</p>
+      <button class="restart" id="restartBtn">Restart Quiz ↻</button>
+    </div>
+  `;
+  document.getElementById('restartBtn').onclick = () => {
+    currentIndex = 0;
+    score = 0;
+    userAnswers = questions.map(() => ({ selectedIndex: null, answered: false }));
+    renderQuestion();
+  };
+}
+
+renderQuestion();
+</script>
+</body>
+</html>
